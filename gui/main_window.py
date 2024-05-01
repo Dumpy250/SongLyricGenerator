@@ -1,6 +1,6 @@
 # gui/main_window.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from api.openai import get_lyrics
 
 
@@ -19,6 +19,7 @@ def style_configuration():
 class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.save_button = None
         self.lyrics_text = None
         self.iconbitmap('song-lyrics.ico')
         self.history_button = None
@@ -47,6 +48,7 @@ class MainWindow(tk.Tk):
         self.create_generate_button()
         self.create_history_button()
         self.create_lyrics_text()
+        self.create_save_button()
 
     def create_prompt_label(self):
         self.prompt_label = ttk.Label(self, text="Enter your prompt:")
@@ -83,6 +85,21 @@ class MainWindow(tk.Tk):
     def create_history_button(self):
         self.history_button = ttk.Button(self, text="Show History", command=self.show_history)
         self.history_button.grid(row=7, column=0, columnspan=3)
+
+    def create_save_button(self):
+        self.save_button = ttk.Button(self, text="Save Lyrics", command=self.save_lyrics)
+        self.save_button.grid(row=10, column=0, columnspan=3)
+
+    def save_lyrics(self):
+        lyrics = self.lyrics_text.get("1.0", "end").strip()
+        if not lyrics:
+            messagebox.showerror("Error", "No lyrics to save.")
+            return
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
+        if not file_path:  # If the user cancels the dialog, file_path will be an empty string
+            return
+        with open(file_path, "w") as file:
+            file.write(lyrics)
 
     def create_lyrics_text(self):
         self.lyrics_text = tk.Text(self, height=10)
