@@ -21,7 +21,10 @@ class MainWindow(tk.Tk):
         super().__init__()
         self.save_button = None
         self.lyrics_text = None
-        self.iconbitmap('song-lyrics.ico')
+        try:
+            self.iconbitmap('song-lyrics.ico')
+        except Exception:
+            pass
         self.history_button = None
         self.generate_button = None
         self.poem_radiobutton = None
@@ -44,6 +47,7 @@ class MainWindow(tk.Tk):
         self.create_loading_label()
         self.create_max_tokens_label()
         self.create_max_tokens_spinbox()
+        self.create_token_presets()
         self.create_mode_radiobuttons()
         self.create_generate_button()
         self.create_history_button()
@@ -68,27 +72,38 @@ class MainWindow(tk.Tk):
         self.max_tokens_label.grid(row=2, column=0, sticky='w')
 
     def create_max_tokens_spinbox(self):
-        self.max_tokens_spinbox = ttk.Spinbox(self, from_=1, to=500, increment=1)
+        self.max_tokens_spinbox = ttk.Spinbox(self, from_=16, to=2000, increment=10)
         self.max_tokens_spinbox.grid(row=3, column=0, sticky='w')
+        self.max_tokens_spinbox.set(200)
+
+    def create_token_presets(self):
+        frame = ttk.Frame(self)
+        frame.grid(row=4, column=0, sticky="w", pady=5)
+
+        ttk.Label(frame, text="Presets:").grid(row=0, column=0, padx=(0, 5))
+
+        ttk.Button(frame, text="Short (100)", command=lambda: self.max_tokens_spinbox.set(100)).grid(row=0, column=1)
+        ttk.Button(frame, text="Medium (200)", command=lambda: self.max_tokens_spinbox.set(200)).grid(row=0, column=2)
+        ttk.Button(frame, text="Long (400)", command=lambda: self.max_tokens_spinbox.set(400)).grid(row=0, column=3)
 
     def create_mode_radiobuttons(self):
         self.mode = tk.StringVar(value="song")
         self.song_radiobutton = ttk.Radiobutton(self, text="Song", variable=self.mode, value="song")
-        self.song_radiobutton.grid(row=4, column=0, sticky='w')
+        self.song_radiobutton.grid(row=5, column=0, sticky='w')
         self.poem_radiobutton = ttk.Radiobutton(self, text="Poem", variable=self.mode, value="poem")
-        self.poem_radiobutton.grid(row=5, column=0, sticky='w')
+        self.poem_radiobutton.grid(row=6, column=0, sticky='w')
 
     def create_generate_button(self):
         self.generate_button = ttk.Button(self, text="Generate Lyrics", command=self.generate_lyrics)
-        self.generate_button.grid(row=6, column=0, columnspan=3)
+        self.generate_button.grid(row=7, column=0, columnspan=3)
 
     def create_history_button(self):
         self.history_button = ttk.Button(self, text="Show History", command=self.show_history)
-        self.history_button.grid(row=7, column=0, columnspan=3)
+        self.history_button.grid(row=8, column=0, columnspan=3)
 
     def create_save_button(self):
         self.save_button = ttk.Button(self, text="Save Lyrics", command=self.save_lyrics)
-        self.save_button.grid(row=10, column=0, columnspan=3)
+        self.save_button.grid(row=11, column=0, columnspan=3)
 
     def save_lyrics(self):
         lyrics = self.lyrics_text.get("1.0", "end").strip()
@@ -103,7 +118,7 @@ class MainWindow(tk.Tk):
 
     def create_lyrics_text(self):
         self.lyrics_text = tk.Text(self, height=10)
-        self.lyrics_text.grid(row=8, column=0, sticky='w')
+        self.lyrics_text.grid(row=9, column=0, sticky='w')
 
     # Rest of the MainWindow class methods...
 

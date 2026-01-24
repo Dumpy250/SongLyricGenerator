@@ -1,44 +1,37 @@
-# api/openai.py
 import os
-import requests
-from requests.exceptions import RequestException
+import time
+from openai import OpenAI
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-URL = "https://api.openai.com/v1/chat/completions"
-HEADERS = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {OPENAI_API_KEY}"
-}
+def get_lyrics(prompt: str, mode: str, max_tokens: int) -> str:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set. Add it to your Run Configuration env vars.")
 
+    client = OpenAI(api_key=api_key)
 
-def get_lyrics(prompt, mode, max_tokens):
-    system_message = "I need you to help me write a song." if mode == "song" else "I need you to help me write a poem."
-    user_message = f"{system_message} {prompt}"
-    data = {
-        "model": "gpt-3.5-turbo",
-        "messages": [
-            {
-                "role": "user",
-                "content": user_message
-            }
-        ],
-        "max_tokens": max_tokens
-    }
-    try:
-        response = requests.post(URL, headers=HEADERS, json=data)
-        response.raise_for_status()  # This will raise a RequestException if the status code is not 200
-        return response.json()['choices'][0]['message']['content']
-    except RequestException as e:
-        if e.response.status_code == 400:
-            raise Exception("Bad Request: The server could not understand the request due to invalid syntax.") from e
-        elif e.response.status_code == 401:
-            raise Exception("Unauthorized: The client must authenticate itself to get the requested response.") from e
-        elif e.response.status_code == 403:
-            raise Exception("Forbidden: The client does not have access rights to the content.") from e
-        elif e.response.status_code == 404:
-            raise Exception("Not Found: The server can not find the requested resource.") from e
-        elif e.response.status_code == 500:
-            raise Exception("Internal Server Error: The server has encountered a situation it doesn't know how to "
-                            "handle.") from e
-        else:
-            raise Exception(f"Error: {e.response.status_code}, {e.response.text}") from e
+    kind = "song lyrics" if mode == "song" else "poem"
+    system = (
+        f"You generate {kind}. Follow the user's prompt. "
+        f"Format nicely with line breaks. "
+        f"If it's a song, include verses and a chorus."
+    )
+
+    max_out = max(16, int(max_tokens))
+
+    last_err = None
+    for attempt in range(3):
+        try:
+            resp = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=max_out,
+            )
+            return resp.choices[0].message.content or ""
+        except Exception as e:
+            last_err = e
+            time.sleep(0.5 * (2 ** attempt))
+
+    raise last_err
